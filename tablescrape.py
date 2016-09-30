@@ -43,7 +43,7 @@ def grab_initial_state_data():
     pickle.dump(main_df, pickle_out)
     pickle_out.close()
 
-def HPI_Benchmark:
+def HPI_Benchmark():
     df = quandl.get("FMAC/HPI_USA", authtoken=api_key)
     df.rename(columns={"Value": "United States"}, inplace=True)
     df["United States"] = (df["United States"] - df["United States"][0]) / df["United States"][0] * 100.0
@@ -52,16 +52,21 @@ def HPI_Benchmark:
 def main():
     # grab_initial_state_data()
     fig = plt.figure()
-    ax1 = plt.subplot2grid((1,1), (0,0))
+    ax1 = plt.subplot2grid((2, 1), (0, 0))
+    ax2 = plt.subplot2grid((2, 1), (1, 0), sharex=ax1)
 
     HPI_data = pd.read_pickle('fiddy_states3.pickle')
-    benchmark = HPI_Benchmark()
+    # TX_AK_12corr = pd.rolling_corr(HPI_data['TX'], HPI_data['AK'], 12)
+    TX_AK_12corr = HPI_data['TX'].rolling(window=12).corr(HPI_data['AK'])
 
-    HPI_data.plot(ax = ax1)
-    benchmark.plot(ax)
-    plt.legend().remove()
+    HPI_data['TX'].plot(ax=ax1, label='TX HPI')
+    HPI_data['AK'].plot(ax=ax1, label='AK HPI')
+    ax1.legend(loc=4)
+
+    TX_AK_12corr.plot(ax=ax2, label='TX/AK Corr')
+
+    plt.legend(loc=4)
     plt.show()
-
 
 
     # df = pd.read_csv("ZILL-Z84501_MLP.csv")
