@@ -7,32 +7,112 @@ import urllib.request
 import datetime
 import pandas as pd
 import pickle
+import numpy as np
 
 from pandas_datareader import data as web
 import matplotlib.pyplot as plt
 from matplotlib import style
-style.use('fivethirtyeight')
 from yahoo_finance import Share
 import quandl
+style.use('fivethirtyeight')
+
 
 api_key = "AazaK8bSUJLemayFzakF"
 
 
+def mortgage_30y():
+    df = quandl.get("FMAC/MORTG", trim_start='1975-01-01', authtoken=api_key)
+    df["Value"] = (df["Value"] - df["Value"][0]) / df["Value"][0] * 100.0
+    df.rename(columns={"Value": "M30"}, inplace=True)
+    # df = df.resample('D')
+    df = df.resample("M").mean()
+    return df
+
+
+def sp500_data():
+    df = quandl.get("YAHOO/INDEX_GSPC", trim_start='1975-01-01', authtoken=api_key)
+    df['Adjusted Close'] = (df["Adjusted Close"] - df["Adjusted Close"][0]) / df["Adjusted Close"][0] * 100.0
+    df = df.resample("M").last()
+    df.rename(columns={"Adjusted Close": "sp500"}, inplace=True)
+    df = df["sp500"]
+    return df
+
+
+def gdp_data():
+    df = quandl.get("BCB/4385", trim_start='1975-01-01', authtoken=api_key)
+    df['Value'] = (df["Value"] - df["Value"][0]) / df["Value"][0] * 100.0
+    df = df.resample("M").last()
+    df.rename(columns={"Value": "GDP"}, inplace=True)
+    df = df["GDP"]
+    return df
+
+
+def us_unemployment():
+    df = quandl.get("ECPI/JOB_G", trim_start='1975-01-01', authtoken=api_key)
+    df['Unemployment Rate'] = (df["Unemployment Rate"] - df["Unemployment Rate"][0]) / df["Unemployment Rate"][0] * 100.0
+    df = df.resample("M").mean()
+    return df
 
 def main():
-    bridge_height = {'meters': [10.26, 10.31, 10.27, 10.22, 10.23, 6212.42, 10.28, 10.25, 10.31]}
-    df = pd.DataFrame(bridge_height)
-    df['STD'] = pd.rolling_std(df['meters'], 2)
-    print (df)
-
-    df_std = df.describe()['meters']['std']
-    df = df[(df['STD'] < df_std * 2)]
+    housing_data = pd.read_pickle('HPI.pickle')
+    housing_data = housing_data.pct_change()
 
 
-    print(df_std)
 
-    df.plot()
-    plt.show()
+    print(housing_data.head())
+
+    housing_data.replace([np.inf, -np.inf], np.nan, inplace=True)
+    housing_data.dropna(inplace=True)
+
+
+
+
+def main6():
+    sp500 = sp500_data()
+    US_GDP = gdp_data()
+    US_umeployment = us_unemployment()
+
+    m30 = mortgage_30y()
+    HPI_data = pd.read_pickle("fiddy_states3.pickle")
+    HPI_bench = HPI_Benchmark()
+
+    HPI = HPI_data.join([m30, US_umeployment, US_GDP, sp500])
+    HPI.dropna(inplace=True)
+
+    print(HPI)
+    print(HPI.corr())
+
+    HPI.to_pickle('HPI.pickle')
+
+
+def main5():
+    df = mortgage_30y()
+    print(df)
+
+    m30 = mortgage_30y()
+    HPI_data = pd.read_pickle('fiddy_states3.pickle')
+    HPI_Bench = HPI_Benchmark()
+
+    state_HPI_M30 = HPI_data.join(m30)
+
+    # print(state_HPI_M30.corr()['M30'].describe())
+
+    M30_rolling_corr = state_HPI_M30.rolling(window=12).corr(state_HPI_M30['M30'])
+    # print(M30_rolling_corr)
+
+    # bridge_height = {'meters': [10.26, 10.31, 10.27, 10.22, 10.23, 6212.42, 10.28, 10.25, 10.31]}
+    # df = pd.DataFrame(bridge_height)
+    # df['STD'] = pd.rolling_std(df['meters'], 2)
+    # print (df)
+    #
+    # df_std = df.describe()['meters']['std']
+    # df = df[(df['STD'] < df_std * 2)]
+    #
+    # print(df_std)
+    #
+    # df.plot()
+    # plt.show()
+
 
 
 
