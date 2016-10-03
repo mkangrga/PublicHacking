@@ -7,6 +7,7 @@ import urllib.request
 import datetime
 import pandas as pd
 import pickle
+
 from pandas_datareader import data as web
 import matplotlib.pyplot as plt
 from matplotlib import style
@@ -16,10 +17,28 @@ import quandl
 
 api_key = "AazaK8bSUJLemayFzakF"
 
+
+
+def main():
+    bridge_height = {'meters': [10.26, 10.31, 10.27, 10.22, 10.23, 6212.42, 10.28, 10.25, 10.31]}
+    df = pd.DataFrame(bridge_height)
+    df['STD'] = pd.rolling_std(df['meters'], 2)
+    print (df)
+
+    df_std = df.describe()['meters']['std']
+    df = df[(df['STD'] < df_std * 2)]
+
+
+    print(df_std)
+
+    df.plot()
+    plt.show()
+
+
+
 def state_list():
     fiddy_states = pd.read_html("https://simple.wikipedia.org/wiki/List_of_U.S._states")
     return fiddy_states[0][0][1:]
-
 
 def grab_initial_state_data():
 
@@ -49,7 +68,7 @@ def HPI_Benchmark():
     df["United States"] = (df["United States"] - df["United States"][0]) / df["United States"][0] * 100.0
     return df
 
-def main():
+def main1():
     # grab_initial_state_data()
     fig = plt.figure()
     ax1 = plt.subplot2grid((2, 1), (0, 0))
@@ -77,7 +96,6 @@ def main():
     # df.columns = ['Austin_HPI']
     # print(df.head())
 
-
 def main3():
     yahoo = Share('YHOO')
     # df = pd.DataFrame(yahoo.get_historical('2016-01-01', '2016-09-21'))
@@ -88,7 +106,6 @@ def main3():
     df['Adj Close'].plot()
     plt.show()
 
-# Gather our code in a main() function
 def main2():
     my_url = "https://www.federalreserve.gov/monetarypolicy/fomcprojtabl20160316.htm"
     soup = BeautifulSoup(urllib.request.urlopen(my_url).read(), "lxml")
