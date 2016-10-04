@@ -8,6 +8,8 @@ import datetime
 import pandas as pd
 import pickle
 import numpy as np
+from statistics import mean
+from sklearn import svm, preprocessing, cross_validation
 
 from pandas_datareader import data as web
 import matplotlib.pyplot as plt
@@ -19,6 +21,15 @@ style.use('fivethirtyeight')
 
 api_key = "AazaK8bSUJLemayFzakF"
 
+def create_labels(curr_hpi, fut_hpi):
+    if fut_hpi > curr_hpi:
+        return 1
+    else:
+        return 0
+
+
+def moving_average(values):
+    return mean(values)
 
 def mortgage_30y():
     df = quandl.get("FMAC/MORTG", trim_start='1975-01-01', authtoken=api_key)
@@ -53,18 +64,26 @@ def us_unemployment():
     df = df.resample("M").mean()
     return df
 
+
 def main():
     housing_data = pd.read_pickle('HPI.pickle')
     housing_data = housing_data.pct_change()
 
-
-
-    print(housing_data.head())
-
     housing_data.replace([np.inf, -np.inf], np.nan, inplace=True)
+    housing_data['US_HPI_Future'] = housing_data['United States'].shift(-1)
+
     housing_data.dropna(inplace=True)
+    housing_data['Label'] = list(map(create_labels, housing_data['United States'], housing_data['US_HPI_Future']))
 
+    x = np.array(housing_data.drop(['Label', 'US_HPI_Future'], 1))
+    x = preprocessing.scale(x)
+    y = np.array(housing_data['Label'])
+    x_train, x_test, y_train, y_test = cross_validation.train_test_split(x, y, test_size=0.2)
 
+    clf = svm.SVC(kernel='linear')
+    clf.fit(x_train, y_train)
+
+    print(clf.score(x_test, y_test))
 
 
 def main6():
@@ -76,7 +95,7 @@ def main6():
     HPI_data = pd.read_pickle("fiddy_states3.pickle")
     HPI_bench = HPI_Benchmark()
 
-    HPI = HPI_data.join([m30, US_umeployment, US_GDP, sp500])
+    HPI = HPI_data.join([HPI_bench, m30, US_umeployment, US_GDP, sp500])
     HPI.dropna(inplace=True)
 
     print(HPI)
