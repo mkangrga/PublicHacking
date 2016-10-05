@@ -18,8 +18,7 @@ from yahoo_finance import Share
 import quandl
 style.use('fivethirtyeight')
 
-
-api_key = "AazaK8bSUJLemayFzakF"
+api_key = open("api_key.txt", 'r').read()
 
 def create_labels(curr_hpi, fut_hpi):
     if fut_hpi > curr_hpi:
