@@ -67,6 +67,7 @@ def us_unemployment():
 def main():
     housing_data = pd.read_pickle('HPI.pickle')
     housing_data = housing_data.pct_change()
+    m30 = mortgage_30y()
 
     housing_data.replace([np.inf, -np.inf], np.nan, inplace=True)
     housing_data['US_HPI_Future'] = housing_data['United States'].shift(-1)
