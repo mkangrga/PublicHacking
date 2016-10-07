@@ -23,8 +23,6 @@ regression_line = [(m * x) + b for x in xs]
 predict_x = 8
 predict_y = m * predict_x + b
 
-
-
 plt.scatter(xs, ys)
 plt.plot(xs, regression_line)
 plt.show()
