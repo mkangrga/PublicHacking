@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib import style
 from collections import Counter
 import warnings
+import random
 style.use('fivethirtyeight')
 
 dataset = {'k' : [[1,2], [2,3], [3,1]], 'r': [[6,5], [7,7], [8,6]]}
@@ -22,14 +23,41 @@ def k_nearest_neightbors(data, predict, k=3):
             # euclidean_distance = np.sqrt(np.sum((np.array(features)-np.array(predict))**2))
             euclidean_distance = np.linalg.norm(np.array(features)-np.array(predict))
             distances.append([euclidean_distance, group])
-
     votes = [i[1] for i in sorted(distances)[:k]]
-    print(Counter(votes).most_common(1))
     vote_result = Counter(votes).most_common(1)[0][0]
+    confidence = Counter(votes).most_common(1)[0][1] / k
+    return vote_result, confidence
 
-    return vote_result
+df = pd.read_csv('breast-cancer-wisconsin.data')
+df.replace('?', -99999, inplace=True)
+df.drop(['id'], 1, inplace=True)
+full_data = df.astype(float).values.tolist()
 
-result = k_nearest_neightbors(dataset, new_features, k=3)
+random.shuffle(full_data)
+test_size = 0.2
+train_data = full_data[:-int(test_size*len(full_data))]
+test_data = full_data[-int(test_size*len(full_data)):]
+train_set = {2: [], 4: []}
+test_set = {2: [], 4: []}
+
+for data in train_data:
+    train_set[data[-1]].append(data[:-1])
+
+for data in test_data:
+    test_set[data[-1]].append(data[:-1])
+
+counter = 0
+total = 0
+
+for group in test_set:
+    for data in test_set[group]:
+        result = k_nearest_neightbors(train_set, data, k=50)
+        if result == group:
+            counter += 1
+        total += 1
+
+print("Accuracy: ", counter/total)
+
 
 
 def old_code():
