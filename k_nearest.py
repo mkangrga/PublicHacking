@@ -51,7 +51,7 @@ total = 0
 
 for group in test_set:
     for data in test_set[group]:
-        result = k_nearest_neightbors(train_set, data, k=50)
+        result, confidence = k_nearest_neightbors(train_set, data, k=50)
         if result == group:
             counter += 1
         total += 1
