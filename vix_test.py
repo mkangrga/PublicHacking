@@ -4,6 +4,7 @@ import math
 import numpy as np
 from sklearn import preprocessing, cross_validation, svm
 from sklearn.linear_model import LinearRegression
+from sklearn.svm import SVR
 import matplotlib.pyplot as plt
 import datetime
 from matplotlib import style
@@ -14,10 +15,11 @@ style.use('ggplot')
 api_key = open('api_key.txt', 'r').read()
 
 
-def get_dataset(quandl_code):
+def get_dataset(quandl_code, convert_to_pct=True):
     df = quandl.get(quandl_code, authtoken=api_key)
     code = re.search(r'(\w+)/(\w+)', quandl_code).group(2)
-    df[code + "_PCT_CHG"] = np.log(df["Close"] / df["Open"]) * 100.0
+    if convert_to_pct:
+        df[code + "_PCT_CHG"] = np.log(df["Close"] / df["Open"]) * 100.0
     df.rename(columns={"Open": code + "_open", "Close": code + "_close"}, inplace=True)
     df = df[[code + "_open", code + "_close", code + "_PCT_CHG"]]
     return df
@@ -41,7 +43,7 @@ def refresh_vix_pickle():
                      "GOOG/NYSEARCA_UVXY"]
 
     for code in list_of_stuff:
-        df = get_dataset(code)
+        df = get_dataset(code, convert_to_pct=True)
         if main_df.empty:
             main_df = pd.DataFrame(df)
         else:
@@ -51,7 +53,11 @@ def refresh_vix_pickle():
     main_df.to_pickle('vix_data.pickle')
     print(main_df.tail())
 
+# refresh_vix_pickle()
+
 df = pd.read_pickle('vix_data.pickle')
+
+
 
 print(df.tail())
 print(df.head())
@@ -73,11 +79,13 @@ y = np.array(df[forecast_col])
 
 X_train, X_test, y_train, y_test = cross_validation.train_test_split(X, y, test_size=0.2)
 
-clf = LinearRegression(n_jobs=-1)
+clf = SVR(kernel='rbf', C=5)
 clf.fit(X_train, y_train)
 accuracy = clf.score(X_test, y_test)
+r_squared = clf.r2_score(X_test, y_test)
 forecast_set = clf.predict(X_lately)
-print(forecast_set, accuracy, forecast_out)
+
+print("Forecast Set: {0}\nAccuracy: {1}\nForecast Out: {2}\n".format(forecast_set, accuracy, forecast_out))
 df['Forecast'] = np.nan
 
 last_date = df.iloc[-1].name
@@ -90,7 +98,7 @@ for i in forecast_set:
     next_unix += one_day
     df.loc[next_date] = [np.nan for _ in range(len(df.columns) - 1)] + [i]
 
-df['Adj. Close'].plot()
+df[forecast_col].plot()
 df['Forecast'].plot()
 plt.legend(loc=4)
 plt.xlabel('Date')
