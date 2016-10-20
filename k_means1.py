@@ -24,7 +24,6 @@ colors = ["g.", "r.", "c.", "b.", "k.", "o."]
 
 for i in range(len(X)):
     plt.plot(X[i][0], X[i][1], colors[labels[i]], markersize=25)
-
 plt.scatter(centroids[:,0], centroids[:,1], marker="x", s=150, linewidths=5)
 plt.show()
 print(clf.predict([20, 20]))
